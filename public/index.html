@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Production Manager</title>
+  <meta name="description" content="Live stream production rundown manager for card game tournaments.">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .dashboard-hero {
+      text-align: center;
+      padding: 48px 0 40px;
+    }
+    .dashboard-hero .brand-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    .dashboard-hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .dashboard-hero p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .no-prods {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--r-lg);
+    }
+    .prod-card__actions .btn { flex: 1; justify-content: center; }
+    .import-zone {
+      margin-top: 40px;
+      border: 2px dashed var(--border);
+      border-radius: var(--r-lg);
+      padding: 32px;
+      text-align: center;
+      transition: all var(--t-normal);
+      cursor: pointer;
+    }
+    .import-zone:hover, .import-zone.drag-over {
+      border-color: var(--primary);
+      background: rgba(124,77,255,0.05);
+    }
+    .import-zone p { color: var(--text-muted); font-size: 0.88rem; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__logo">
+        <span>🎬</span> Stream<span class="dot">.</span>Production
+      </div>
+      <div class="topbar__actions">
+        <a href="/docs/index.html" target="_blank" class="btn btn-ghost btn-sm">📚 Docs</a>
+        <button class="btn btn-ghost btn-sm" id="btn-import-topbar">⬆ Import JSON</button>
+        <button class="btn btn-primary" id="btn-new-prod">+ New Production</button>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main-content" style="overflow-y:auto;">
+      <div class="dashboard">
+        <!-- Hero -->
+        <div class="dashboard-hero">
+          <div class="brand-icon">🎬</div>
+          <h1>Production Manager</h1>
+          <p>Build your rundown, manage your live stream production.</p>
+        </div>
+
+        <!-- Productions list -->
+        <div class="section-title" style="margin-top:0;">Your Productions</div>
+        <div class="productions-grid" id="productions-grid">
+          <div class="no-prods">No productions yet. Create one to get started.</div>
+        </div>
+
+        <!-- Import zone -->
+        <div class="import-zone" id="import-zone">
+          <div style="font-size:1.8rem;">📂</div>
+          <p>Drag & drop a production JSON file here, or <strong style="color:var(--primary-light);cursor:pointer;" onclick="document.getElementById('import-file').click()">click to browse</strong></p>
+          <input type="file" id="import-file" accept=".json" style="display:none">
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- New Production Modal -->
+  <div class="modal-backdrop hidden" id="modal-new-prod">
+    <div class="modal">
+      <div class="modal__header">
+        <span class="modal__title">New Production</span>
+        <button class="btn-icon" id="btn-close-modal">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="form-group">
+          <label class="form-label" for="new-prod-name">Production Name</label>
+          <input class="form-input" id="new-prod-name" type="text" placeholder="e.g. RoV Championship Day 1">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new-prod-length">Estimated Length (minutes)</label>
+          <input class="form-input" id="new-prod-length" type="number" min="1" value="480">
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn-ghost" id="btn-cancel-new-prod">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-new-prod">Create Production</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm delete modal -->
+  <div class="modal-backdrop hidden" id="modal-confirm-delete">
+    <div class="modal">
+      <div class="modal__header">
+        <span class="modal__title">Delete Production?</span>
+        <button class="btn-icon" id="btn-close-delete-modal">✕</button>
+      </div>
+      <div class="modal__body">
+        <p style="color:var(--text-secondary);">This will permanently delete the production and all its items. This cannot be undone.</p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn-ghost" id="btn-cancel-delete">Cancel</button>
+        <button class="btn btn-danger" id="btn-confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

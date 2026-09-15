@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeline — Stream Production Manager</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    body { overflow: hidden; }
+
+    /* ── 2-column layout ───────────────────────────── */
+    .crew-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* ── Topbar overrides ──────────────────────── */
+    #topbar-prod-name {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    
+    .timeline-panel {
+      border-right: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar__logo"><span>🎬</span> Stream<span class="dot">.</span>Production</div>
+    
+    <div id="topbar-prod-name" style="flex: 1; font-weight: 600; font-size: 0.95rem; margin-left: 16px;">Loading...</div>
+    
+    <div class="topbar__actions" style="display: flex; align-items: center; gap: 12px;">
+      <span id="topbar-status-badge" class="badge badge-idle">...</span>
+      <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.4);">📋 CREW VIEW</span>
+      
+      <!-- Read-only status indicator -->
+      <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--border); padding-left: 12px;">
+        <div id="conn-dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--status-idle);"></div>
+        <span id="conn-label">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Caster Message Alert -->
+  <div id="caster-message-alert" class="hidden" style="background: var(--status-active); color: #fff; padding: 12px 24px; font-weight: 600; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(255, 23, 68, 0.3); z-index: 50; position: relative;">
+    <div style="font-size: 1.5rem;">📢</div>
+    <div style="flex: 1;">
+      <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Live Message from Producer</div>
+      <div id="caster-message-text" style="font-size: 1.1rem; margin-top: 2px;"></div>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <div class="main-content">
+    <div class="crew-layout">
+      
+      <!-- LEFT: Timeline -->
+      <div class="timeline-panel">
+        <div class="timeline-panel__header">
+          <h2>Timeline</h2>
+          <span id="timeline-count" class="text-muted text-xs">0 items</span>
+        </div>
+        <div class="timeline-scroll" id="timeline-scroll">
+          <div id="timeline-list"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Standby -->
+      <div class="side-panel">
+        <div class="standby-panel" style="height: 100%;">
+          <div class="standby-panel__header">
+            <h2>Standby</h2>
+          </div>
+          <div class="standby-scroll" id="standby-scroll">
+            <div id="standby-list"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/shared.js"></script>
+<script src="/js/timeline.js"></script>
+</body>
+</html>

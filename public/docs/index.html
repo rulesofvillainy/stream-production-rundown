@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quick Guide - Stream Production Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/css/docs.css">
+</head>
+<body>
+
+  <aside class="docs-sidebar">
+    <a href="/docs/index.html" class="docs-brand">🎬 Stream Manager</a>
+    <nav class="docs-nav">
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Guides</div>
+        <a href="/docs/index.html" class="docs-nav-link active">Quick Guide (Casters & Crew)</a>
+        <a href="/docs/producer.html" class="docs-nav-link">Producer Manual</a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="docs-main">
+    <h1>Quick Guide</h1>
+    <p>Welcome to the <strong>Stream Production Manager</strong>. If you are a caster, stage crew member, or general production staff, this one-page guide will give you a quick overview of how the system works and what to look out for.</p>
+
+    <div class="callout info">
+      <div class="callout-title">The Big Picture</div>
+      <p>The Producer runs the show using a detailed timeline. As they move from one segment to the next, <strong>your screen will automatically update in real-time</strong>. You never need to refresh the page!</p>
+    </div>
+
+    <h2>1. The Caster View</h2>
+    <p>The Caster View is your digital run-of-show. It has two main columns:</p>
+    <ul>
+      <li><strong>ON AIR NOW (Left)</strong>: This is what is currently happening live on the stream. It has a <span class="mockup-badge live">● LIVE</span> indicator and a bright green glowing border.</li>
+      <li><strong>UP NEXT (Right)</strong>: This is a preview of the next segment. It helps you prepare for the upcoming transition.</li>
+    </ul>
+
+    <div class="mockup-container">
+      <div class="mockup-header">Visual Example: What you might see</div>
+      <div style="display:flex; gap:16px;">
+        <div style="flex:1; border:1px solid rgba(0,230,118,0.5); padding:16px; border-radius:10px; box-shadow:0 0 20px rgba(0,230,118,0.1);">
+          <div style="margin-bottom:8px;"><span class="mockup-badge live">● ON AIR NOW</span></div>
+          <div style="font-weight:700; font-size:1.2rem; margin-bottom:4px;">Caster Talk — Player Meeting</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase;">Casters</div>
+          <p style="font-size:0.8rem; margin-top:8px;">Casters recap the player meeting and preview Round 1 matchups.</p>
+        </div>
+        <div style="flex:1; border:1px solid var(--border); padding:16px; border-radius:10px; opacity:0.7;">
+          <div style="margin-bottom:8px;"><span class="mockup-badge">UP NEXT</span></div>
+          <div style="font-weight:700; font-size:1.2rem; margin-bottom:4px;">Gameplay - Table A</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase;">Gameplay</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>2. Task Lists</h2>
+    <p>Sometimes, a segment isn't a single event, but a checklist of items that must be completed before moving on. These are called <strong>Task Lists</strong>.</p>
+    <p>If you see tasks appearing with checkboxes, it means the Producer is working through a checklist (like running ads, rolling credits, or checking audio levels). You will see the checkboxes fill in automatically as the Producer marks them complete.</p>
+
+    <h2>3. Producer Messages</h2>
+    <p>The Producer has the ability to send direct, urgent messages to the Caster/Crew screens. When the Producer sends a message, a vibrant purple banner will slide down from the top of your screen.</p>
+    
+    <div class="mockup-container">
+      <div class="mockup-header">Visual Example: Producer Message</div>
+      <div class="mock-banner">
+        <span style="font-size:1.5rem;">📣</span>
+        <div style="flex:1;">
+          <div style="font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Message from Producer</div>
+          <div style="font-size:1.1rem; font-weight:500;">Stretch! We are delaying the next match by 2 minutes for a bathroom break.</div>
+        </div>
+      </div>
+    </div>
+    
+    <p>You do not need to dismiss this message. The Producer will clear it from their end when the information is no longer needed.</p>
+
+    <h2>4. Stream Status Indicators</h2>
+    <p>Keep an eye on the overall stream status, which may be displayed on your monitor:</p>
+    <ul>
+      <li><span class="mockup-badge">IDLE</span> - The production has not started yet.</li>
+      <li><span class="mockup-badge live">LIVE</span> - The stream is actively running and you should act accordingly.</li>
+      <li><span class="mockup-badge" style="color:var(--status-pause); border-color:var(--status-pause); background:rgba(255,171,64,0.1);">PAUSED</span> - The production is paused (usually for an extended break or technical issue).</li>
+    </ul>
+
+  </main>
+</body>
+</html>

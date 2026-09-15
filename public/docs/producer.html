@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Producer Manual - Stream Production Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/css/docs.css">
+</head>
+<body>
+
+  <aside class="docs-sidebar">
+    <a href="/docs/index.html" class="docs-brand">🎬 Stream Manager</a>
+    <nav class="docs-nav">
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Guides</div>
+        <a href="/docs/index.html" class="docs-nav-link">Quick Guide (Casters & Crew)</a>
+        <a href="/docs/producer.html" class="docs-nav-link active">Producer Manual</a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="docs-main">
+    <h1>Producer Manual</h1>
+    <p>This comprehensive guide covers everything a Producer needs to know to manage a live event using the Stream Production Manager.</p>
+
+    <h2>1. Dashboard & Productions</h2>
+    <p>When you load the app, you arrive at the Dashboard. Here, you manage all your "Productions" (e.g., individual tournament days, separate events).</p>
+    <ul>
+      <li><strong>Create New:</strong> Click the "Create Production" button to start a blank canvas.</li>
+      <li><strong>Import:</strong> Drag and drop a previously exported <code>.json</code> file to restore a full production configuration, including settings and timeline.</li>
+      <li><strong>Export:</strong> Click the Export icon on any existing production to save a backup to your local computer.</li>
+    </ul>
+
+    <h2>2. The Producer Layout</h2>
+    <p>Clicking into a Production takes you to the Producer View. This screen is divided into three functional columns:</p>
+    
+    <h3>Left Column: Controls & State</h3>
+    <p>This panel gives you overarching control over the broadcast state and features utility tools.</p>
+    <ul>
+      <li><strong>Production Name:</strong> Editable directly at the top.</li>
+      <li><strong>Master Status:</strong> Displays whether the show is <span class="mockup-badge">IDLE</span>, <span class="mockup-badge live">LIVE</span>, or <span class="mockup-badge" style="color:var(--status-pause); border-color:var(--status-pause); background:rgba(255,171,64,0.1);">PAUSED</span>.</li>
+      <li><strong>Playback Controls:</strong> The Start/Resume/Pause buttons control the Master Status. Clicking Start pushes the first timeline item to LIVE.</li>
+      <li><strong>Settings:</strong> Opens the Settings modal (configure Caster names, OBS Scenes, etc.).</li>
+      <li><strong>Caster Message:</strong> A dedicated panel to push urgent text alerts directly to all Caster screens. Type a message, click Send, and click Clear to dismiss it.</li>
+    </ul>
+
+    <h3>Center Column: The Timeline</h3>
+    <p>This is your active rundown. It represents the chronological flow of the show.</p>
+    <ul>
+      <li><strong>Active Item:</strong> The currently live segment is highlighted in <strong style="color:var(--status-active);">vibrant red</strong> with a pulsing glow.</li>
+      <li><strong>Reordering:</strong> Grab the <kbd>⠿</kbd> handle on the left of any item to drag and drop it anywhere in the timeline.</li>
+      <li><strong>Inserting:</strong> Click the <kbd>+ Add</kbd> divider between any two items to instantly insert a new item at that exact position.</li>
+    </ul>
+
+    <div class="mockup-container">
+      <div class="mockup-header">Visual Example: Timeline Interaction</div>
+      <div class="mock-timeline-item">
+        <span style="color:var(--text-muted);">⠿</span>
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-weight:700;">Introductions</span>
+            <span class="mock-type-badge">CASTERS</span>
+          </div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">⏱ ~5:00</div>
+        </div>
+        <button class="mockup-btn">▶</button>
+      </div>
+      <div class="mock-timeline-item active">
+        <span style="color:var(--text-muted);">⠿</span>
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-weight:700;">Match 1 - Table A</span>
+            <span class="mock-type-badge" style="background:#3B82F6;">GAMEPLAY</span>
+          </div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">⏱ ~45:00</div>
+        </div>
+        <button class="mockup-btn live">✓</button>
+      </div>
+    </div>
+
+    <h3>Right Column: Standby & Active Detail</h3>
+    <p>This split panel handles upcoming, unassigned items and the hyper-focus view of what's live.</p>
+    <ul>
+      <li><strong>Standby List (Top):</strong> A staging area for items that aren't yet scheduled on the timeline. You can draft items here and drag them into the Timeline later.</li>
+      <li><strong>Active Item Detail (Bottom):</strong> A magnified view of the currently LIVE segment. It displays full notes, configured metadata (like which Casters are on desk), and OBS scenes. This is where you actually check off tasks in a Task List.</li>
+    </ul>
+
+    <h2>3. Events vs. Task Lists</h2>
+    <p>When you add an item, you choose between two primary object types:</p>
+
+    <h3>Event</h3>
+    <p>A standard segment of the show (e.g., Gameplay, Interview, BRB). Events have specific "Event Types" which dictate their color coding and the custom fields you can fill out.</p>
+    <ul>
+      <li><em>Example:</em> A "Gameplay" event will ask for Table, Round, and assigned Casters. An "Interview" event will ask for the Player Name and Interviewer.</li>
+      <li>Each event type is automatically color-coded with a distinct, CSS-driven palette so you can scan the rundown visually.</li>
+    </ul>
+
+    <h3>Task List</h3>
+    <p>A checklist for the production crew, colored in <strong style="color:#FBBF24;">Amber</strong>. These do not push metadata to the casters; instead, they give the Producer a checklist to run through.</p>
+    <div class="callout danger">
+      <div class="callout-title">Important Task List Behavior</div>
+      <p>When a Task List is the active item, the <span class="mockup-btn live">✓ Mark Complete</span> button is disabled until <strong>all checkboxes in the Active Detail panel are ticked</strong>. This ensures critical pre-flight sequences (like unmuting mics or firing ads) are not skipped.</p>
+    </div>
+
+    <h2>4. Navigating the Show</h2>
+    <p>As the Producer, you drive the state of the broadcast:</p>
+    <ul>
+      <li><strong>Mark Complete:</strong> Clicking the <kbd>✓</kbd> button on the active item immediately pushes it to the "Completed" state (it grays out) and <strong>automatically activates the next item in the timeline</strong>.</li>
+      <li><strong>Jump To Item:</strong> Clicking the <kbd>▶</kbd> button on any pending item immediately makes that item LIVE, skipping anything in between. Skipped items get crossed out.</li>
+    </ul>
+
+    <h2>5. Settings & Settings Modal</h2>
+    <p>Click the <strong>⚙ Settings</strong> button in the left panel to open the configuration.</p>
+    <ul>
+      <li><strong>Info Tab:</strong> Change the Production Name or estimated run length.</li>
+      <li><strong>Data Lists Tab:</strong> Define the list of available Casters and OBS Scene names. These populate the dropdown menus when creating items.</li>
+      <li><strong>About Tab:</strong> Software licensing info and links to this documentation.</li>
+    </ul>
+
+  </main>
+</body>
+</html>

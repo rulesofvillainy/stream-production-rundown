@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Producer — Stream Production Manager</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    body { overflow: hidden; }
+
+    /* ── 3-column layout ───────────────────────────── */
+    .producer-layout {
+      display: grid;
+      grid-template-columns: 180px 4fr 3fr;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* ── Left: Controls panel ──────────────────────── */
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px 12px;
+      gap: 8px;
+    }
+
+    .controls-panel__section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      padding: 4px 4px 2px;
+      margin-top: 8px;
+    }
+
+    .controls-panel__status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 8px;
+      background: var(--bg-elevated);
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+    }
+
+    .controls-panel__status-text {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .ctrl-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: var(--r-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all var(--t-fast);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border-color: var(--border);
+    }
+    .ctrl-btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+    .ctrl-btn.ctrl-start  { background: rgba(0,230,118,0.15); color: var(--status-live);  border-color: rgba(0,230,118,0.4); }
+    .ctrl-btn.ctrl-start:hover  { background: var(--status-live); color: #000; }
+    .ctrl-btn.ctrl-pause  { background: rgba(255,171,64,0.15); color: var(--status-pause); border-color: rgba(255,171,64,0.4); }
+    .ctrl-btn.ctrl-pause:hover  { background: var(--status-pause); color: #000; }
+    .ctrl-btn.ctrl-resume { background: rgba(0,230,118,0.15); color: var(--status-live); border-color: rgba(0,230,118,0.4); }
+    .ctrl-btn.ctrl-resume:hover { background: var(--status-live); color: #000; }
+    .ctrl-btn.ctrl-danger { color: var(--status-skip); border-color: rgba(239,83,80,0.3); }
+    .ctrl-btn.ctrl-danger:hover { background: var(--status-skip); color: #fff; }
+    .ctrl-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .controls-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* ── Topbar editable name ──────────────────────── */
+    #topbar-prod-name {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: var(--r-sm);
+      border: 1px solid transparent;
+      transition: border-color var(--t-fast);
+      min-width: 140px;
+    }
+    #topbar-prod-name:hover { border-color: var(--border); }
+    #topbar-prod-name:focus { border-color: var(--border-focus); outline: none; background: var(--bg-overlay); }
+
+    /* ── Type-specific form sections ───────────────── */
+    .type-section { display: none; }
+    .type-section.visible { display: block; }
+
+    /* ── Active detail panel ───────────────────────── */
+    .active-detail-panel { padding: 16px; }
+    .active-detail-panel .no-active {
+      text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 12px;
+    }
+
+    /* ── Timeline ──────────────────────────────────── */
+    .timeline-footer-add { padding: 8px 0 16px; }
+
+    /* ── Standby empty ─────────────────────────────── */
+    .standby-empty {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 24px 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--r-md);
+    }
+
+    /* ── Settings ──────────────────────────────────────────────────────────── */
+    .settings-list-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .settings-list-item input { flex: 1; }
+
+    .type-icon { font-size: 0.9rem; }
+
+    /* ── Caster Message ─────────────────────────────────────────────────────── */
+    .caster-msg-panel {
+      margin-top: auto;
+      padding-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .caster-msg-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      resize: none;
+      height: 60px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      color: var(--text-primary);
+      font-size: 0.78rem;
+      padding: 6px 8px;
+      font-family: inherit;
+      transition: border-color var(--t-fast);
+    }
+    .caster-msg-textarea:focus { outline: none; border-color: var(--border-focus); }
+    .caster-msg-send-btn {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: var(--r-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(124,77,255,0.45);
+      background: rgba(124,77,255,0.15);
+      color: var(--primary-light);
+      transition: all var(--t-fast);
+    }
+    .caster-msg-send-btn:hover:not(:disabled) { background: var(--primary); color: #fff; }
+    .caster-msg-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Active message state shown to producer */
+    .caster-msg-active {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(124,77,255,0.12);
+      border: 1px solid rgba(124,77,255,0.4);
+      border-radius: var(--r-md);
+      padding: 8px 10px;
+      animation: msg-glow 2.5s ease-in-out infinite;
+    }
+    @keyframes msg-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(124,77,255,0); }
+      50% { box-shadow: 0 0 8px 2px rgba(124,77,255,0.25); }
+    }
+    .caster-msg-active__label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--primary-light);
+    }
+    .caster-msg-active__text {
+      font-size: 0.78rem;
+      color: var(--text-primary);
+      word-break: break-word;
+      line-height: 1.4;
+    }
+    .caster-msg-clear-btn {
+      width: 100%;
+      padding: 5px 10px;
+      border-radius: var(--r-md);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(239,83,80,0.35);
+      background: transparent;
+      color: var(--status-skip);
+      transition: all var(--t-fast);
+    }
+    .caster-msg-clear-btn:hover { background: var(--status-skip); color: #fff; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar__logo"><span>🎬</span> Stream<span class="dot">.</span>Production</div>
+    <input id="topbar-prod-name" type="text" value="Loading..." title="Click to rename">
+    <div class="topbar__actions">
+      <span id="topbar-status-badge" class="badge badge-idle" style="margin-right:4px;">IDLE</span>
+    </div>
+  </header>
+
+
+  <!-- Main content -->
+  <div class="main-content">
+    <div class="producer-layout">
+
+      <!-- LEFT: Controls Panel -->
+      <div class="controls-panel">
+
+        <!-- Status indicator -->
+        <div class="controls-panel__section-label">Status</div>
+        <div class="controls-panel__status">
+          <div class="status-dot" id="status-dot"></div>
+          <span class="controls-panel__status-text" id="status-label">IDLE</span>
+        </div>
+
+        <div class="controls-divider"></div>
+        <div class="controls-panel__section-label">Production</div>
+
+        <button class="ctrl-btn ctrl-start" id="btn-start">▶ Start</button>
+        <button class="ctrl-btn ctrl-pause hidden" id="btn-pause">⏸ Pause</button>
+        <button class="ctrl-btn ctrl-resume hidden" id="btn-resume">▶ Resume</button>
+        <button class="ctrl-btn ctrl-danger" id="btn-reset">↺ Reset</button>
+
+        <div class="controls-divider"></div>
+        <div class="controls-panel__section-label">Views</div>
+
+        <button class="ctrl-btn" onclick="window.open('/caster/'+PROD_ID,'_blank')">🎙 Caster View</button>
+        <button class="ctrl-btn" onclick="window.open('/timeline/'+PROD_ID,'_blank')">📋 Crew Timeline</button>
+
+        <div class="controls-divider"></div>
+        <div class="controls-panel__section-label">Production</div>
+
+        <button class="ctrl-btn" id="btn-settings">⚙ Settings</button>
+        <a class="ctrl-btn" href="/" style="text-decoration:none;">← Dashboard</a>
+
+        <!-- Caster Message -->
+        <div class="controls-divider"></div>
+        <div class="controls-panel__section-label">📢 Caster Message</div>
+
+        <!-- Compose state (shown when no active message) -->
+        <div class="caster-msg-panel" id="caster-msg-compose">
+          <textarea
+            class="caster-msg-textarea"
+            id="caster-msg-input"
+            placeholder="Type a message to casters…"
+            maxlength="200"
+          ></textarea>
+          <button class="caster-msg-send-btn" id="btn-send-caster-msg" disabled>📤 Send to Casters</button>
+        </div>
+
+        <!-- Active message state (shown when a message is live) -->
+        <div class="caster-msg-panel hidden" id="caster-msg-active-panel">
+          <div class="caster-msg-active">
+            <div class="caster-msg-active__label">📢 Live Message</div>
+            <div class="caster-msg-active__text" id="caster-msg-active-text"></div>
+          </div>
+          <button class="caster-msg-clear-btn" id="btn-clear-caster-msg">✕ Clear Message</button>
+        </div>
+
+      </div>
+
+      <!-- CENTER: Timeline -->
+      <div class="timeline-panel">
+        <div class="timeline-panel__header">
+          <h2>Timeline</h2>
+          <span id="timeline-count" class="text-muted text-xs">0 items</span>
+        </div>
+        <div class="timeline-scroll" id="timeline-scroll">
+          <!-- Insert at top -->
+          <div class="insert-btn-wrap" data-insert-index="0" data-zone="timeline">
+            <div class="insert-line"></div>
+            <button class="insert-btn" onclick="openAddModal('timeline',0)">+ Add</button>
+            <div class="insert-line"></div>
+          </div>
+          <!-- Items rendered here by JS -->
+          <div id="timeline-list"></div>
+          <!-- Footer add -->
+          <div class="timeline-footer-add">
+            <button class="expandable-add-btn" id="btn-add-timeline-bottom">+ Add to Timeline</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Standby + Active Detail -->
+      <div class="side-panel">
+        <!-- Standby -->
+        <div class="standby-panel">
+          <div class="standby-panel__header">
+            <h2>Standby</h2>
+            <button class="btn btn-ghost btn-sm" id="btn-add-standby">+ Add</button>
+          </div>
+          <div class="standby-scroll" id="standby-scroll">
+            <div id="standby-list"></div>
+          </div>
+        </div>
+
+        <!-- Active Detail -->
+        <div class="active-detail-panel" id="active-detail-panel">
+          <div class="active-detail-panel__label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Now Active</span>
+            <button class="btn btn-ghost btn-sm" onclick="scrollToActiveItem()" style="font-size:0.7rem; padding: 2px 6px; border: 1px solid var(--border);">⌖ Locate</button>
+          </div>
+          <div class="no-active" id="no-active-msg">No active item. Start the production.</div>
+          <div id="active-detail-content" class="hidden"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ MODALS ═══════════════════════════════════ -->
+
+<!-- Add/Edit Item Modal -->
+<div class="modal-backdrop hidden" id="modal-item">
+  <div class="modal modal--wide">
+    <div class="modal__header">
+      <span class="modal__title" id="modal-item-title">Add Event</span>
+      <button class="btn-icon" onclick="closeItemModal()">✕</button>
+    </div>
+    <div class="modal__body">
+      <!-- Object type tabs -->
+      <div class="tabs" id="objecttype-tabs">
+        <button class="tab-btn active" data-tab="event" onclick="switchObjectType('event',this)">📅 Event</button>
+        <button class="tab-btn" data-tab="taskList" onclick="switchObjectType('taskList',this)">✅ Task List</button>
+      </div>
+
+      <!-- Common fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="item-title">Title *</label>
+          <input class="form-input" id="item-title" type="text" placeholder="e.g. Round 1 Table A Gameplay">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="item-duration">Est. Duration (min)</label>
+          <input class="form-input" id="item-duration" type="number" min="1" value="15">
+        </div>
+      </div>
+
+
+      <div class="form-group">
+        <label class="form-label" for="item-notes">Notes</label>
+        <textarea class="form-textarea" id="item-notes" placeholder="Production notes, setup reminders..."></textarea>
+      </div>
+
+      <!-- Event-specific -->
+      <div id="event-fields">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="item-type">Event Type *</label>
+            <select class="form-select" id="item-type" onchange="onTypeChange()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="item-obs-scene">OBS Scene</label>
+            <select class="form-select" id="item-obs-scene"></select>
+          </div>
+        </div>
+
+        <!-- Casters -->
+        <div class="type-section" id="ts-casters">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="td-caster-a">Caster A</label>
+              <select class="form-select" id="td-caster-a"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="td-caster-b">Caster B</label>
+              <select class="form-select" id="td-caster-b"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gameplay -->
+        <div class="type-section" id="ts-gameplay">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="td-round">Round #</label>
+              <input class="form-input" id="td-round" type="number" min="1" value="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="td-table">Table</label>
+              <input class="form-input" id="td-table" type="text" placeholder="A">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="td-gp-caster-a">Caster A</label>
+              <select class="form-select" id="td-gp-caster-a"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="td-gp-caster-b">Caster B</label>
+              <select class="form-select" id="td-gp-caster-b"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interview -->
+        <div class="type-section" id="ts-interview">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="td-player">Player Name</label>
+              <input class="form-input" id="td-player" type="text" placeholder="Player name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="td-interviewer">Interviewer</label>
+              <input class="form-input" id="td-interviewer" type="text" placeholder="Interviewer">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="td-iv-round">Round #</label>
+            <input class="form-input" id="td-iv-round" type="number" min="1" value="1">
+          </div>
+        </div>
+
+        <!-- Live Video -->
+        <div class="type-section" id="ts-live-video">
+          <div class="form-group">
+            <label class="form-label" for="td-cam-source">Camera / Source</label>
+            <input class="form-input" id="td-cam-source" type="text" placeholder="e.g. Roaming Cam">
+          </div>
+        </div>
+      </div>
+
+      <!-- TaskList-specific -->
+      <div id="tasklist-fields" class="hidden">
+        <div class="form-group">
+          <label class="form-label">Tasks</label>
+          <div class="expandable-list" id="tasks-list"></div>
+          <button class="expandable-add-btn" id="btn-add-task">+ Add Task</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-item">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop hidden" id="modal-settings">
+  <div class="modal modal--wide">
+    <div class="modal__header">
+      <span class="modal__title">Production Settings</span>
+      <button class="btn-icon" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchSettingsTab('info',this)">Info</button>
+        <button class="tab-btn" onclick="switchSettingsTab('casters',this)">Casters</button>
+        <button class="tab-btn" onclick="switchSettingsTab('scenes',this)">OBS Scenes</button>
+        <button class="tab-btn" onclick="switchSettingsTab('about',this)">About</button>
+      </div>
+
+      <!-- Info tab -->
+      <div class="tab-panel active" id="stab-info">
+        <div class="form-group">
+          <label class="form-label" for="s-prod-name">Production Name</label>
+          <input class="form-input" id="s-prod-name" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-prod-length">Estimated Length (min)</label>
+          <input class="form-input" id="s-prod-length" type="number" min="1">
+        </div>
+      </div>
+
+      <!-- Casters tab -->
+      <div class="tab-panel" id="stab-casters">
+        <div class="expandable-list" id="settings-casters-list"></div>
+        <button class="expandable-add-btn" id="btn-add-caster">+ Add Caster</button>
+      </div>
+
+      <!-- OBS Scenes tab -->
+      <div class="tab-panel" id="stab-scenes">
+        <div class="form-row" style="margin-bottom:16px; align-items:flex-end;" id="obs-connect-row">
+          <div class="form-group" style="flex:2;">
+            <label class="form-label" for="obs-ws-url">OBS WebSocket URL</label>
+            <input class="form-input" id="obs-ws-url" type="text" value="ws://localhost:4455">
+          </div>
+          <div class="form-group" style="flex:2;">
+            <label class="form-label" for="obs-ws-pass">Password</label>
+            <input class="form-input" id="obs-ws-pass" type="password">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <button class="btn btn-primary" style="width:100%" id="btn-obs-connect">Connect</button>
+          </div>
+        </div>
+        
+        <div class="form-row hidden" style="margin-bottom:16px; align-items:flex-end;" id="obs-import-row">
+          <div class="form-group" style="flex:3;">
+            <label class="form-label">Scene Collection</label>
+            <select class="form-select" id="obs-collection-select"></select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <button class="btn btn-primary" style="width:100%" id="btn-obs-import">Import</button>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <button class="btn btn-ghost" style="width:100%" id="btn-obs-disconnect">Disconnect</button>
+          </div>
+        </div>
+        
+        <div class="expandable-list" id="settings-scenes-list"></div>
+        <button class="expandable-add-btn" id="btn-add-scene">+ Add OBS Scene</button>
+      </div>
+
+      <!-- About tab -->
+      <div class="tab-panel" id="stab-about">
+        <div style="text-align:center; padding: 24px 0;">
+          <div style="font-size: 3rem; margin-bottom: 8px;">🎬</div>
+          <h2 style="font-size: 1.5rem; margin-bottom: 4px;">Stream.Production</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 16px;">Version 1.0.0</p>
+          <p style="margin-bottom: 24px;">Built for live stream production rundown management.</p>
+          
+          <div style="display:flex; gap: 12px; justify-content: center; margin-bottom: 32px;">
+            <a href="/docs/index.html" target="_blank" class="btn btn-primary" style="text-decoration:none;">📚 Open Documentation</a>
+            <a href="https://github.com" target="_blank" class="btn btn-ghost" style="text-decoration:none;">GitHub</a>
+          </div>
+          
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Licensed under ISC<br>
+            Created by <a href="#" style="color:var(--text-muted);">The Dev Team</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm action modal (generic) -->
+<div class="modal-backdrop hidden" id="modal-confirm">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title" id="modal-confirm-title">Confirm</span>
+      <button class="btn-icon" onclick="closeConfirm()">✕</button>
+    </div>
+    <div class="modal__body">
+      <p id="modal-confirm-body" style="color:var(--text-secondary);"></p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="btn-confirm-action">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<!-- OBS WebSocket CDN -->
+<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.4/dist/obs-ws.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/shared.js"></script>
+<script src="/js/producer.js"></script>
+</body>
+</html>

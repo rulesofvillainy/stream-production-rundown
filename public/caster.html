@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caster View — Stream Production Manager</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    body { overflow-y: auto; }
+
+    .caster-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px;
+      height: 52px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .caster-topbar__logo {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .caster-topbar__prod-name {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      flex: 1;
+    }
+    .caster-topbar__status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* View options */
+    .view-opts {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .view-opts label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+    /* OFF state */
+    .caster-offline {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+    .caster-offline .big-icon { font-size: 3rem; margin-bottom: 16px; }
+    .caster-offline h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+
+    /* Type data display */
+    .type-data-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .type-data-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-overlay);
+      padding: 4px 10px;
+      border-radius: var(--r-full);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .type-data-chip strong { color: var(--text-primary); }
+
+    /* Connection indicator */
+    .conn-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--status-idle);
+    }
+    .conn-dot.connected { background: var(--status-live); }
+
+    /* Completed overlay */
+    .prod-complete-banner {
+      text-align: center;
+      padding: 40px;
+      background: rgba(0,230,118,0.05);
+      border: 1px solid rgba(0,230,118,0.2);
+      border-radius: var(--r-lg);
+      width: 100%;
+      color: var(--status-live);
+    }
+
+    /* Production Starting banner */
+    .prod-starting-banner {
+      text-align: center;
+      padding: 56px 40px;
+      background: rgba(124,77,255,0.06);
+      border: 1px solid rgba(124,77,255,0.25);
+      border-radius: var(--r-lg);
+      width: 100%;
+      animation: starting-pulse 2.5s ease-in-out infinite;
+    }
+    .prod-starting-banner__icon {
+      font-size: 2.8rem;
+      margin-bottom: 16px;
+      animation: starting-pulse 2s ease-in-out infinite;
+    }
+    .prod-starting-banner__title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary-light);
+      letter-spacing: -0.3px;
+      margin-bottom: 8px;
+    }
+    .prod-starting-banner__sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    @keyframes starting-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* ── Producer Message Banner ─────────────────────────────────────────────── */
+    .caster-msg-banner {
+      position: fixed;
+      top: 52px; /* below topbar */
+      left: 0;
+      right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      background: linear-gradient(90deg, rgba(124,77,255,0.95) 0%, rgba(90,50,200,0.95) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 4px 24px rgba(124,77,255,0.4);
+      backdrop-filter: blur(8px);
+      animation: banner-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+      color: #fff;
+    }
+    .caster-msg-banner.hidden {
+      display: none;
+    }
+    @keyframes banner-in {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .caster-msg-banner__icon {
+      font-size: 1.3rem;
+      animation: msg-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes msg-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    .caster-msg-banner__label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      opacity: 0.8;
+      white-space: nowrap;
+    }
+    .caster-msg-banner__text {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    /* Push content down when banner is visible */
+    .caster-layout.has-banner {
+      padding-top: 68px;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Topbar -->
+  <header class="caster-topbar">
+    <div class="caster-topbar__logo">🎬</div>
+    <div class="caster-topbar__prod-name" id="caster-prod-name">Loading...</div>
+    <div class="view-opts">
+      <label title="Show task lists in the feed">
+        <input type="checkbox" id="show-tasklists"> Show task lists
+      </label>
+    </div>
+    <div class="caster-topbar__status">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span id="conn-label">Connecting...</span>
+    </div>
+    <div class="caster-topbar__status" style="margin-left:8px;">
+      <div class="status-dot" id="caster-status-dot"></div>
+      <span id="caster-status-label">IDLE</span>
+    </div>
+  </header>
+
+  <!-- Producer → Caster Message Banner -->
+  <div class="caster-msg-banner hidden" id="caster-msg-banner">
+    <div class="caster-msg-banner__icon">📢</div>
+    <div class="caster-msg-banner__label">From Production</div>
+    <div class="caster-msg-banner__text" id="caster-msg-banner-text"></div>
+  </div>
+
+  <!-- Caster layout -->
+  <div class="caster-layout" id="caster-layout">
+    <div class="caster-offline" id="caster-offline">
+      <div class="big-icon">🎙</div>
+      <h2>Waiting for production to start...</h2>
+      <p>The producer will start the show from the producer view.</p>
+    </div>
+    <!-- Cards render here — this is the only div that gets cleared -->
+    <div id="caster-cards"></div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/shared.js"></script>
+  <script src="/js/caster.js"></script>
+</body>
+</html>

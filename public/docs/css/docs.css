@@ -1,0 +1,250 @@
+:root {
+  --bg-main: #0B0B0E;
+  --bg-sidebar: #13131A;
+  --bg-card: #1A1A24;
+  --bg-hover: #232330;
+  
+  --text-primary: #F0F0F5;
+  --text-secondary: #A0A0B0;
+  --text-muted: #6B6B7C;
+  
+  --primary: #7C4DFF;
+  --primary-hover: #651FFF;
+  --primary-light: #B388FF;
+  
+  --border: #2A2A35;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  
+  --status-live: #00E676;
+  --status-active: #FF1744;
+  --status-pause: #FFAB40;
+  
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+  --sp-5: 32px;
+  --sp-6: 48px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.6;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.docs-sidebar {
+  width: 280px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.docs-brand {
+  padding: var(--sp-4);
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.docs-nav {
+  padding: var(--sp-3) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.docs-nav-group {
+  margin-bottom: var(--sp-3);
+}
+
+.docs-nav-title {
+  padding: 0 var(--sp-4);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+
+.docs-nav-link {
+  display: block;
+  padding: var(--sp-2) var(--sp-4);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.docs-nav-link:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.docs-nav-link.active {
+  background-color: rgba(124, 77, 255, 0.1);
+  color: var(--primary-light);
+  border-left-color: var(--primary);
+}
+
+/* Main Content */
+.docs-main {
+  flex: 1;
+  padding: var(--sp-6);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Typography */
+h1 { font-size: 2.5rem; margin-bottom: var(--sp-2); font-weight: 800; letter-spacing: -0.5px; }
+h2 { font-size: 1.75rem; margin-top: var(--sp-6); margin-bottom: var(--sp-3); padding-bottom: var(--sp-2); border-bottom: 1px solid var(--border); font-weight: 700; letter-spacing: -0.3px; }
+h3 { font-size: 1.25rem; margin-top: var(--sp-4); margin-bottom: var(--sp-2); font-weight: 600; }
+p { margin-bottom: var(--sp-3); color: var(--text-secondary); }
+ul, ol { margin-bottom: var(--sp-3); padding-left: var(--sp-4); color: var(--text-secondary); }
+li { margin-bottom: var(--sp-1); }
+a { color: var(--primary-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+strong { color: var(--text-primary); }
+
+/* Components */
+.callout {
+  background-color: var(--bg-card);
+  border-left: 4px solid var(--primary);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  margin: var(--sp-4) 0;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 700; margin-bottom: var(--sp-1); color: var(--text-primary); }
+
+.callout.warning { border-left-color: var(--status-pause); }
+.callout.info { border-left-color: #3B82F6; }
+.callout.danger { border-left-color: var(--status-active); }
+
+/* UI Mockups */
+.mockup-container {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  margin: var(--sp-4) 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-family: 'Inter', sans-serif;
+}
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.mockup-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mockup-btn.primary { background: var(--primary); border-color: var(--primary); }
+.mockup-btn.live { background: var(--status-live); color: #000; border-color: var(--status-live); }
+
+.mockup-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.mockup-badge.live { background: rgba(0,230,118,0.15); color: var(--status-live); border-color: rgba(0,230,118,0.3); }
+
+/* Specific Mockup Styles */
+.mock-timeline-item {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 5px solid #10B981; /* Casters green */
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+  align-items: center;
+  gap: var(--sp-3);
+}
+.mock-timeline-item.active {
+  border-color: var(--status-active);
+  border-left-color: var(--status-active);
+  box-shadow: 0 0 20px rgba(255,23,68,0.2);
+  background: linear-gradient(90deg, rgba(255,23,68,0.1) 0%, var(--bg-card) 70%);
+}
+.mock-type-badge {
+  font-size: 0.7rem;
+  background: #10B981;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+.mock-banner {
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+  color: white;
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  box-shadow: 0 10px 30px rgba(124,77,255,0.4);
+}
+
+kbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.85em;
+  font-family: monospace;
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  .docs-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+  .docs-main { padding: var(--sp-4); }
+}
