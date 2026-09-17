@@ -103,3 +103,20 @@ const EVENT_TYPES = [
   'casters', 'gameplay', 'interview', 'pre-recorded', 'starting-soon',
   'brb', 'live-video', 'cosplay', 'end-credits', 'custom'
 ];
+
+function formatTimerMS(ms) {
+  const totalSecs = Math.floor(ms / 1000);
+  const m = Math.floor(totalSecs / 60);
+  const s = totalSecs % 60;
+  return m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+}
+
+
+function openModal(id) {
+  document.getElementById(id)?.classList.remove('hidden');
+}
+
+function closeModal(id) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+

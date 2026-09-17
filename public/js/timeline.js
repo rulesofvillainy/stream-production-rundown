@@ -28,8 +28,42 @@ socket.on('production:stateUpdate', (newState) => {
   const map = {};
   (newState.items||[]).forEach(i => map[i.id] = i);
   state.itemMap = map;
+  
+  const prod = state.production;
+  let liveEventId = null;
+  if (prod && prod.status !== 'idle') {
+    const currentIdx = prod.currentItemIndex ?? 0;
+    let activeItem = state.itemMap[prod.timeline[currentIdx]];
+    if (activeItem && activeItem.status === 'active') {
+      if (activeItem.objectType === 'event') {
+        liveEventId = activeItem.id;
+      } else if (activeItem.objectType === 'taskList') {
+        for (let i = currentIdx - 1; i >= 0; i--) {
+          const item = state.itemMap[prod.timeline[i]];
+          if (item && item.objectType === 'event') { liveEventId = item.id; break; }
+        }
+      }
+    }
+  }
+  state.liveEventId = liveEventId;
+
   renderAll();
 });
+
+// ── Ticker ─────────────────────────────────────────────────────────────────────
+function tickerLoop() {
+  const prod = state.production;
+  if (prod && prod.status === 'live' && prod.liveEventLastStartedAt) {
+    const elapsed = (prod.liveEventElapsedMs || 0) + (Date.now() - prod.liveEventLastStartedAt);
+    const formatted = formatTimerMS(elapsed);
+    if (state.liveEventId) {
+      const el = document.getElementById(`event-timer-${state.liveEventId}`);
+      if (el) el.textContent = `[ ${formatted} ] `;
+    }
+  }
+  requestAnimationFrame(tickerLoop);
+}
+requestAnimationFrame(tickerLoop);
 
 // ── Render ─────────────────────────────────────────────────────────────────────
 function renderAll() {
@@ -63,17 +97,7 @@ function renderTimeline() {
   let activeItem = prod.status !== 'idle' ? state.itemMap[prod.timeline[currentIdx]] : null;
   if (activeItem && activeItem.status !== 'active') activeItem = null;
 
-  let liveEventId = null;
-  if (activeItem) {
-    if (activeItem.objectType === 'event') {
-      liveEventId = activeItem.id;
-    } else if (activeItem.objectType === 'taskList') {
-      for (let i = currentIdx - 1; i >= 0; i--) {
-        const item = state.itemMap[prod.timeline[i]];
-        if (item && item.objectType === 'event') { liveEventId = item.id; break; }
-      }
-    }
-  }
+  const liveEventId = state.liveEventId;
 
   prod.timeline.forEach((id) => {
     const item = state.itemMap[id];
@@ -168,12 +192,23 @@ function buildItemCard(item, isLiveEvent = false) {
     }
   }
 
+  let timerHtml = '';
+  if (isLiveEvent) {
+    let elapsed = state.production.liveEventElapsedMs || 0;
+    if (state.production.liveEventLastStartedAt) {
+      elapsed += Date.now() - state.production.liveEventLastStartedAt;
+    }
+    timerHtml = `<span id="event-timer-${item.id}" style="color: var(--status-live); font-variant-numeric: tabular-nums; font-weight: bold; margin-right: 6px;">[ ${formatTimerMS(elapsed)} ] </span>`;
+  } else if (isComplete && item.actualDurationMs != null) {
+    timerHtml = `<span style="color: var(--text-muted); font-variant-numeric: tabular-nums; font-weight: bold; margin-right: 6px;">[ ${formatTimerMS(item.actualDurationMs)} ] </span>`;
+  }
+
   // Notice: We completely omit the item-handle and item-actions divs!
   div.innerHTML = `
     <div class="item-body" style="padding-left:12px;">
       <div class="item-row1">
         <span class="type-icon">${icon}</span>
-        <span class="item-title">${escHtml(item.title)}</span>
+        <span class="item-title">${timerHtml}${escHtml(item.title)}</span>
         <span class="item-type-badge">${typeLabel}</span>
       </div>
       <div class="item-meta">

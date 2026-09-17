@@ -45,6 +45,12 @@ function createProduction(data) {
       casters: data.settings?.casters || [],
       obsScenes: data.settings?.obsScenes || []
     },
+    timers: [],
+    liveEventId: null,
+    liveEventElapsedMs: 0,
+    liveEventLastStartedAt: null,
+    productionElapsedMs: 0,
+    productionLastStartedAt: null,
     timeline: [],
     standby: [],
     createdAt: new Date().toISOString(),
@@ -55,7 +61,7 @@ function createProduction(data) {
 }
 
 function updateProduction(id, data) {
-  const allowed = ['name', 'estimatedLength', 'status', 'currentItemIndex', 'settings', 'timeline', 'standby', 'casterMessage'];
+  const allowed = ['name', 'estimatedLength', 'status', 'currentItemIndex', 'settings', 'timeline', 'standby', 'casterMessage', 'timers', 'liveEventId', 'liveEventElapsedMs', 'liveEventLastStartedAt', 'productionElapsedMs', 'productionLastStartedAt'];
   const update = {};
   for (const key of allowed) {
     if (data[key] !== undefined) update[key] = data[key];
@@ -136,7 +142,7 @@ function createItem(productionId, data, zone = 'standby') {
 }
 
 function updateItem(id, data) {
-  const allowed = ['title', 'estimatedDuration', 'notes', 'status', 'type', 'obsScene', 'typeData', 'tasks'];
+  const allowed = ['title', 'estimatedDuration', 'notes', 'status', 'type', 'obsScene', 'typeData', 'tasks', 'actualDurationMs'];
   const update = {};
   for (const key of allowed) {
     if (data[key] !== undefined) update[key] = data[key];

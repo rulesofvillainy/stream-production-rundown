@@ -40,6 +40,10 @@ app.get('/timeline/:productionId', (req, res) => {
   res.sendFile(path.join(publicDir, 'timeline.html'));
 });
 
+app.get('/timer/:productionId/:timerId', (req, res) => {
+  res.sendFile(path.join(publicDir, 'timer.html'));
+});
+
 // ── Socket.IO ────────────────────────────────────────────────────────────────
 const registerSocketHandlers = require('./socket/handlers');
 registerSocketHandlers(io);

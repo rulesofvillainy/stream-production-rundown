@@ -33,8 +33,107 @@ socket.on('production:stateUpdate', (newState) => {
   const map = {};
   (newState.items||[]).forEach(i => map[i.id] = i);
   state.itemMap = map;
-  render();
+  
+  const prod = state.production;
+  let liveEventId = null;
+  if (prod && prod.status !== 'idle') {
+    const currentIdx = prod.currentItemIndex ?? 0;
+    let activeItem = state.itemMap[prod.timeline[currentIdx]];
+    if (activeItem && activeItem.status === 'active') {
+      if (activeItem.objectType === 'event') {
+        liveEventId = activeItem.id;
+      } else if (activeItem.objectType === 'taskList') {
+        for (let i = currentIdx - 1; i >= 0; i--) {
+          const item = state.itemMap[prod.timeline[i]];
+          if (item && item.objectType === 'event') { liveEventId = item.id; break; }
+        }
+      }
+    }
+  }
+  state.liveEventId = liveEventId;
+
+  renderAll();
 });
+
+// ── Ticker ─────────────────────────────────────────────────────────────────────
+let lastTickerTime = 0;
+function tickerLoop(time) {
+  if (time - lastTickerTime > 1000) {
+    lastTickerTime = time;
+    if (state.production) {
+      renderTimers();
+      updateEventTimers();
+    }
+  }
+  requestAnimationFrame(tickerLoop);
+}
+requestAnimationFrame(tickerLoop);
+
+function renderTimers() {
+  const container = document.getElementById('caster-timers');
+  if (!container || !state.production) return;
+  const timers = (state.production.timers || []).filter(t => t.isVisible !== false);
+  
+  if (timers.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  const now = Date.now();
+  let html = '';
+  timers.forEach(t => {
+    let remaining = t.remainingMs;
+    if (t.isRunning && t.lastStartedAt) {
+      remaining = Math.max(0, t.remainingMs - (now - t.lastStartedAt));
+    }
+    const isZero = remaining === 0;
+    const color = isZero ? 'var(--status-live)' : 'var(--text-primary)';
+    
+    html += `
+      <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px 24px; min-width: 140px; text-align: center; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600;">${escHtml(t.name)}</div>
+        <div style="font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; color: ${color}; line-height: 1;">${formatTimerMS(remaining)}</div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+function updateEventTimers() {
+  const prod = state.production;
+  if (!prod) return;
+  
+  if (state.liveEventId) {
+    const el = document.getElementById(`event-timer-${state.liveEventId}`);
+    if (el) {
+      let elapsed = prod.liveEventElapsedMs || 0;
+      if (prod.liveEventLastStartedAt) {
+        elapsed += Date.now() - prod.liveEventLastStartedAt;
+      }
+      el.textContent = `[ ${formatTimerMS(elapsed)} ] `;
+    }
+  }
+
+  const prodTimerEl = document.getElementById('caster-production-timer');
+  if (prodTimerEl) {
+    if (prod.status === 'idle') {
+      prodTimerEl.textContent = '00:00';
+      prodTimerEl.style.color = 'var(--text-muted)';
+    } else {
+      let elapsed = prod.productionElapsedMs || 0;
+      if (prod.status === 'live' && prod.productionLastStartedAt) {
+        elapsed += Date.now() - prod.productionLastStartedAt;
+      }
+      prodTimerEl.textContent = formatTimerMS(elapsed);
+      prodTimerEl.style.color = prod.status === 'live' ? 'var(--status-live)' : 'var(--text-primary)';
+    }
+  }
+}
+
+function renderAll() {
+  render();
+  renderTimers();
+}
 
 // ── Render ─────────────────────────────────────────────────────────────────────
 function render() {
@@ -168,6 +267,15 @@ function buildCasterCard(item, slot) {
 
   const labelText = isNow ? `${icon} NOW` : slot === 'next' ? 'NEXT' : 'COMING UP';
 
+  let timerHtml = '';
+  if (isNow) {
+    let elapsed = state.production.liveEventElapsedMs || 0;
+    if (state.production.liveEventLastStartedAt) {
+      elapsed += Date.now() - state.production.liveEventLastStartedAt;
+    }
+    timerHtml = `<span id="event-timer-${item.id}" style="color: var(--status-live); font-variant-numeric: tabular-nums; font-weight: bold; margin-right: 8px;">[ ${formatTimerMS(elapsed)} ] </span>`;
+  }
+
   let metaHtml = '';
   if (item.estimatedDuration) {
     metaHtml += `<span>~${fmtDuration(item.estimatedDuration)}</span>`;
@@ -202,14 +310,15 @@ function buildCasterCard(item, slot) {
   }
 
   card.innerHTML = `
-    <div class="caster-card__label">${labelText}</div>
+    <div class="caster-card__label ${slot === 'next2' ? 'text-muted' : ''}">${labelText}</div>
     <div class="caster-card__body">
       <div class="caster-card__type">${typeLabel}</div>
-      <div class="caster-card__title">${escHtml(item.title)}</div>
-      <div class="caster-card__meta">${metaHtml}</div>
+      <div class="caster-card__title" style="display: flex; align-items: center;">${timerHtml}${escHtml(item.title)}</div>
+      ${metaHtml ? `<div class="caster-card__meta">${metaHtml}</div>` : ''}
+      ${item.notes ? `<div class="caster-card__notes">${escHtml(item.notes)}</div>` : ''}
       ${typeDataHtml ? `<div class="type-data-row">${typeDataHtml}</div>` : ''}
-      ${item.notes && isNow ? `<div class="caster-card__notes">${escHtml(item.notes)}</div>` : ''}
-    </div>`;
+    </div>
+  `;
   return card;
 }
 

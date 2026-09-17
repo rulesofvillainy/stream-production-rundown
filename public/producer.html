@@ -11,7 +11,7 @@
     /* ── 3-column layout ───────────────────────────── */
     .producer-layout {
       display: grid;
-      grid-template-columns: 180px 4fr 3fr;
+      grid-template-columns: 230px 4fr 3fr;
       height: 100%;
       overflow: hidden;
     }
@@ -225,6 +225,38 @@
   </header>
 
 
+  <!-- Modal: Create Timer -->
+  <div class="modal-backdrop hidden" id="modal-timer">
+    <div class="modal">
+      <div class="modal__header">
+        <span class="modal__title">Add Custom Timer</span>
+        <button class="btn-icon" onclick="closeModal('modal-timer')">✕</button>
+      </div>
+      <div class="modal__body">
+        <form id="form-timer">
+          <div class="form-group">
+            <label class="form-label">Timer Name (e.g., Break, Interview)</label>
+            <input type="text" id="timer-name" class="form-input" required>
+          </div>
+          <div class="form-group" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label">Minutes</label>
+              <input type="number" id="timer-minutes" class="form-input" value="10" min="0" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label">Seconds</label>
+              <input type="number" id="timer-seconds" class="form-input" value="0" min="0" max="59" required>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn-ghost" type="button" onclick="closeModal('modal-timer')">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="document.getElementById('form-timer').requestSubmit()">Add Timer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main content -->
   <div class="main-content">
     <div class="producer-layout">
@@ -234,9 +266,12 @@
 
         <!-- Status indicator -->
         <div class="controls-panel__section-label">Status</div>
-        <div class="controls-panel__status">
-          <div class="status-dot" id="status-dot"></div>
-          <span class="controls-panel__status-text" id="status-label">IDLE</span>
+        <div class="controls-panel__status" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center;">
+            <div class="status-dot" id="status-dot"></div>
+            <span class="controls-panel__status-text" id="status-label">IDLE</span>
+          </div>
+          <span id="production-timer" style="font-variant-numeric: tabular-nums; font-weight: bold; color: var(--text-muted); font-size: 1.1rem;">00:00</span>
         </div>
 
         <div class="controls-divider"></div>
@@ -246,6 +281,15 @@
         <button class="ctrl-btn ctrl-pause hidden" id="btn-pause">⏸ Pause</button>
         <button class="ctrl-btn ctrl-resume hidden" id="btn-resume">▶ Resume</button>
         <button class="ctrl-btn ctrl-danger" id="btn-reset">↺ Reset</button>
+
+        <div class="controls-divider"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div class="controls-panel__section-label">⏱ Timers</div>
+          <button class="btn btn-ghost btn-sm" id="btn-add-timer" style="padding: 2px 6px; font-size: 0.8rem;">+ Add</button>
+        </div>
+        <div id="timers-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+          <!-- Timers will be injected here -->
+        </div>
 
         <div class="controls-divider"></div>
         <div class="controls-panel__section-label">Views</div>

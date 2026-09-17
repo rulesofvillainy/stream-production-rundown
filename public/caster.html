@@ -201,6 +201,9 @@
       <div class="status-dot" id="caster-status-dot"></div>
       <span id="caster-status-label">IDLE</span>
     </div>
+    <div class="caster-topbar__status" style="margin-left: 16px; font-variant-numeric: tabular-nums; font-weight: bold;">
+      <span id="caster-production-timer" style="color: var(--text-muted);">00:00</span>
+    </div>
   </header>
 
   <!-- Producer → Caster Message Banner -->
@@ -217,6 +220,10 @@
       <h2>Waiting for production to start...</h2>
       <p>The producer will start the show from the producer view.</p>
     </div>
+    
+    <!-- Custom Timers Row -->
+    <div id="caster-timers" style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;"></div>
+
     <!-- Cards render here — this is the only div that gets cleared -->
     <div id="caster-cards"></div>
   </div>

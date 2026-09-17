@@ -23,9 +23,146 @@ socket.on('production:stateUpdate', (newState) => {
   const map = {};
   (newState.items||[]).forEach(i => map[i.id] = i);
   state.itemMap = map;
+  
+  const prod = state.production;
+  let liveEventId = null;
+  if (prod && prod.status !== 'idle') {
+    const currentIdx = prod.currentItemIndex ?? 0;
+    let activeItem = state.itemMap[prod.timeline[currentIdx]];
+    if (activeItem && activeItem.status === 'active') {
+      if (activeItem.objectType === 'event') {
+        liveEventId = activeItem.id;
+      } else if (activeItem.objectType === 'taskList') {
+        for (let i = currentIdx - 1; i >= 0; i--) {
+          const item = state.itemMap[prod.timeline[i]];
+          if (item && item.objectType === 'event') { liveEventId = item.id; break; }
+        }
+      }
+    }
+  }
+  state.liveEventId = liveEventId;
+
   renderAll();
   if (!prev || prev.status !== newState.production.status) updateControlBar();
 });
+
+// ── Ticker ─────────────────────────────────────────────────────────────────────
+let lastTickerTime = 0;
+function tickerLoop(time) {
+  if (time - lastTickerTime > 1000) {
+    lastTickerTime = time;
+    if (state.production) {
+      renderTimers();
+      updateEventTimers();
+    }
+  }
+  requestAnimationFrame(tickerLoop);
+}
+requestAnimationFrame(tickerLoop);
+
+function renderTimers() {
+  const container = document.getElementById('timers-container');
+  if (!container || !state.production) return;
+  const timers = state.production.timers || [];
+  
+  if (timers.length === 0) {
+    container.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted);">No active timers.</div>';
+    container.dataset.cache = '';
+    return;
+  }
+  
+  const now = Date.now();
+  const cacheKey = timers.map(t => `${t.id}-${t.isRunning}-${t.isVisible}-${t.name}`).join('|');
+  const isEditing = document.activeElement && document.activeElement.classList.contains('timer-name-input');
+  
+  if (container.dataset.cache !== cacheKey && !isEditing) {
+    let html = '';
+    timers.forEach(t => {
+      let remaining = t.remainingMs;
+      if (t.isRunning && t.lastStartedAt) {
+        remaining = Math.max(0, t.remainingMs - (now - t.lastStartedAt));
+      }
+      const isZero = remaining === 0;
+      const color = isZero ? 'var(--status-live)' : 'var(--text-primary)';
+      
+      html += `
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <input type="text" class="timer-name-input" value="${escHtml(t.name)}" maxlength="25"
+              onkeydown="if(event.key==='Enter') this.blur();"
+              onfocus="this.style.borderBottom = '1px dashed var(--text-muted)'"
+              onblur="this.style.borderBottom = '1px solid transparent'; if(this.value.trim() && this.value.trim() !== '${t.name.replace(/'/g, "\\'")}') socket.emit('timer:updateName', {productionId: PROD_ID, timerId: '${t.id}', name: this.value.trim()})"
+              style="background: transparent; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; flex: 1; min-width: 0; outline: none; border-bottom: 1px solid transparent;"
+            >
+            <div id="timer-time-${t.id}" style="font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; color: ${color};">${formatTimerMS(remaining)}</div>
+          </div>
+          <div style="display: flex; gap: 4px; justify-content: flex-end;">
+            <button class="btn btn-icon btn-sm" onclick="copyTimerLink('${t.id}')" title="Copy Timer Link" style="width: 32px; height: 32px; background: var(--bg-elevated);">🔗</button>
+            <button class="btn btn-icon btn-sm" onclick="socket.emit('timer:toggleVisibility', {productionId: PROD_ID, timerId: '${t.id}'})" title="${t.isVisible === false ? 'Hidden from casters - Click to show' : 'Visible to casters - Click to hide'}" style="width: 32px; height: 32px; background: var(--bg-elevated); color: ${t.isVisible === false ? 'var(--text-muted)' : 'var(--primary-light)'};">
+              ${t.isVisible === false ? '👁‍🗨' : '👁'}
+            </button>
+            ${t.isRunning 
+              ? `<button class="btn btn-icon btn-sm" onclick="socket.emit('timer:pause', {productionId: PROD_ID, timerId: '${t.id}'})" title="Pause" style="width: 32px; height: 32px; background: var(--bg-elevated);">⏸</button>`
+              : `<button id="timer-play-${t.id}" class="btn btn-icon btn-sm" onclick="socket.emit('timer:play', {productionId: PROD_ID, timerId: '${t.id}'})" ${isZero ? 'disabled' : ''} title="Play" style="width: 32px; height: 32px; background: var(--bg-elevated);">▶</button>`
+            }
+            <button class="btn btn-icon btn-sm" onclick="socket.emit('timer:reset', {productionId: PROD_ID, timerId: '${t.id}'})" title="Reset" style="width: 32px; height: 32px; background: var(--bg-elevated);">↺</button>
+            <button class="btn btn-icon btn-sm" onclick="socket.emit('timer:delete', {productionId: PROD_ID, timerId: '${t.id}'})" title="Delete" style="width: 32px; height: 32px; background: var(--bg-elevated); color: var(--status-skip);">✕</button>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+    container.dataset.cache = cacheKey;
+  }
+  
+  // Always update times directly to avoid DOM rebuilds on every tick
+  timers.forEach(t => {
+    let remaining = t.remainingMs;
+    if (t.isRunning && t.lastStartedAt) {
+      remaining = Math.max(0, t.remainingMs - (now - t.lastStartedAt));
+    }
+    const isZero = remaining === 0;
+    const el = document.getElementById(`timer-time-${t.id}`);
+    if (el) {
+      el.textContent = formatTimerMS(remaining);
+      el.style.color = isZero ? 'var(--status-live)' : 'var(--text-primary)';
+    }
+    const playBtn = document.getElementById(`timer-play-${t.id}`);
+    if (playBtn) playBtn.disabled = isZero;
+  });
+}
+
+function updateEventTimers() {
+  const prod = state.production;
+  if (!prod) return;
+  
+  if (state.liveEventId) {
+    const el = document.getElementById(`event-timer-${state.liveEventId}`);
+    if (el) {
+      let elapsed = prod.liveEventElapsedMs || 0;
+      if (prod.liveEventLastStartedAt) {
+        elapsed += Date.now() - prod.liveEventLastStartedAt;
+      }
+      el.textContent = `[ ${formatTimerMS(elapsed)} ]`;
+    }
+  }
+
+  const prodTimerEl = document.getElementById('production-timer');
+  if (prodTimerEl) {
+    if (prod.status === 'idle') {
+      prodTimerEl.textContent = '00:00';
+      prodTimerEl.style.color = 'var(--text-muted)';
+    } else {
+      let elapsed = prod.productionElapsedMs || 0;
+      if (prod.status === 'live' && prod.productionLastStartedAt) {
+        elapsed += Date.now() - prod.productionLastStartedAt;
+      }
+      prodTimerEl.textContent = formatTimerMS(elapsed);
+      prodTimerEl.style.color = prod.status === 'live' ? 'var(--status-live)' : 'var(--text-primary)';
+    }
+  }
+}
+
 
 // ── Render ─────────────────────────────────────────────────────────────────────
 function renderAll() {
@@ -99,17 +236,7 @@ function renderTimeline() {
   let activeItem = prod.status !== 'idle' ? state.itemMap[prod.timeline[currentIdx]] : null;
   if (activeItem && activeItem.status !== 'active') activeItem = null;
 
-  let liveEventId = null;
-  if (activeItem) {
-    if (activeItem.objectType === 'event') {
-      liveEventId = activeItem.id;
-    } else if (activeItem.objectType === 'taskList') {
-      for (let i = currentIdx - 1; i >= 0; i--) {
-        const item = state.itemMap[prod.timeline[i]];
-        if (item && item.objectType === 'event') { liveEventId = item.id; break; }
-      }
-    }
-  }
+  const liveEventId = state.liveEventId;
 
   prod.timeline.forEach((id, idx) => {
     const item = state.itemMap[id];
@@ -197,12 +324,23 @@ function buildItemCard(item, zone, idx, isLiveEvent = false) {
 
   const canComplete = isActualActive && (!isList || allDone);
 
+  let timerHtml = '';
+  if (isLiveEvent) {
+    let elapsed = state.production.liveEventElapsedMs || 0;
+    if (state.production.liveEventLastStartedAt) {
+      elapsed += Date.now() - state.production.liveEventLastStartedAt;
+    }
+    timerHtml = `<span id="event-timer-${item.id}" style="color: var(--status-live); font-variant-numeric: tabular-nums; font-weight: bold; margin-right: 6px;">[ ${formatTimerMS(elapsed)} ] </span>`;
+  } else if (isComplete && item.actualDurationMs != null) {
+    timerHtml = `<span style="color: var(--text-muted); font-variant-numeric: tabular-nums; font-weight: bold; margin-right: 6px;">[ ${formatTimerMS(item.actualDurationMs)} ] </span>`;
+  }
+
   div.innerHTML = `
     <div class="item-handle" title="Drag to reorder">⠿</div>
     <div class="item-body">
       <div class="item-row1">
         <span class="type-icon">${icon}</span>
-        <span class="item-title">${escHtml(item.title)}</span>
+        <span class="item-title">${timerHtml}${escHtml(item.title)}</span>
         <span class="item-type-badge">${typeLabel}</span>
       </div>
       <div class="item-meta">
@@ -364,6 +502,42 @@ function initSortable() {
 
   timelineSortable = Sortable.create(timelineList, opts('timeline'));
   standbySortable  = Sortable.create(standbyList,  opts('standby'));
+}
+
+// ── Form Handlers ────────────────────────────────────────────────────────────
+
+document.getElementById('btn-add-timer')?.addEventListener('click', () => {
+  openModal('modal-timer');
+  document.getElementById('timer-name')?.focus();
+});
+
+document.getElementById('form-timer')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = document.getElementById('timer-name').value.trim();
+  const mins = parseInt(document.getElementById('timer-minutes').value) || 0;
+  const secs = parseInt(document.getElementById('timer-seconds').value) || 0;
+  
+  if (name) {
+    const durationMs = (mins * 60 + secs) * 1000;
+    socket.emit('timer:create', { productionId: PROD_ID, name, durationMs });
+  }
+  
+  closeModal('modal-timer');
+  e.target.reset();
+});
+
+function copyTimerLink(timerId) {
+  const url = window.location.origin + '/timer/' + PROD_ID + '/' + timerId;
+  navigator.clipboard.writeText(url).then(() => {
+    if (typeof showToast === 'function') {
+      showToast('Timer link copied to clipboard', 'success');
+    }
+  }).catch(err => {
+    console.error('Failed to copy', err);
+    if (typeof showToast === 'function') {
+      showToast('Failed to copy link', 'error');
+    }
+  });
 }
 
 // ── Production controls ────────────────────────────────────────────────────────

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #timer-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15vw; /* Scales with window */
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Good for visibility if background is not perfectly dark */
+      line-height: 1;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="timer-display">00:00</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/shared.js"></script>
+  <script>
+    const pathParts = window.location.pathname.split('/');
+    const PROD_ID = pathParts[2];
+    const TIMER_ID = pathParts[3];
+
+    let state = { production: null };
+
+    // socket is already initialized in shared.js (const socket = io();)
+    function joinRoom() {
+      socket.emit('production:join', PROD_ID);
+    }
+    socket.on('connect', joinRoom);
+    if (socket.connected) joinRoom();
+
+    socket.on('production:stateUpdate', (newState) => {
+      state = newState;
+    });
+
+    function formatTimerMS(ms) {
+      if (ms < 0) ms = 0;
+      const totalSeconds = Math.floor(ms / 1000);
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      const mm = m < 10 ? '0' + m : m;
+      const ss = s < 10 ? '0' + s : s;
+      // Note: for hours support you might want h:mm:ss, but standard format is mm:ss
+      if (m >= 60) {
+        const h = Math.floor(m / 60);
+        const remM = m % 60;
+        const rmm = remM < 10 ? '0' + remM : remM;
+        return h + ':' + rmm + ':' + ss;
+      }
+      return mm + ':' + ss;
+    }
+
+    let lastTickerTime = 0;
+    function tickerLoop(time) {
+      if (time - lastTickerTime > 1000) {
+        lastTickerTime = time;
+        if (state.production && state.production.timers) {
+          const timer = state.production.timers.find(t => t.id === TIMER_ID);
+          const display = document.getElementById('timer-display');
+          
+          if (timer) {
+            display.classList.remove('hidden');
+            let remaining = timer.remainingMs;
+            if (timer.isRunning && timer.lastStartedAt) {
+              remaining = Math.max(0, timer.remainingMs - (Date.now() - timer.lastStartedAt));
+            }
+            display.textContent = formatTimerMS(remaining);
+          } else {
+            // Timer deleted or not found
+            display.classList.add('hidden');
+          }
+        }
+      }
+      requestAnimationFrame(tickerLoop);
+    }
+    requestAnimationFrame(tickerLoop);
+
+  </script>
+</body>
+</html>
