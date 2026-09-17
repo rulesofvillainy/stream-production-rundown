@@ -1,18 +1,22 @@
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const { randomUUID: uuidv4 } = require('crypto');
 
 let dbPath;
-try {
-  // pkg environment — executable's directory
+if (process.pkg) {
+  // pkg environment — store data next to the executable
   dbPath = path.join(path.dirname(process.execPath), 'data', 'db.json');
-} catch (e) {
+} else {
+  // Dev environment — store data in project directory
   dbPath = path.join(__dirname, '../../data/db.json');
 }
-// Always fall back to local data dir for dev
-if (!require('fs').existsSync(path.dirname(dbPath))) {
-  dbPath = path.join(__dirname, '../../data/db.json');
+
+// Ensure the data directory exists on the real file system
+const dataDir = path.dirname(dbPath);
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
 const adapter = new FileSync(dbPath);

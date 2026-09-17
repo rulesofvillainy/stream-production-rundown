@@ -1,6 +1,6 @@
-// socket/handlers.js � Socket.IO event handlers
+// socket/handlers.js  Socket.IO event handlers
 const db = require('../db/db');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 
 function buildState(productionId) {
   const prod = db.getProduction(productionId);

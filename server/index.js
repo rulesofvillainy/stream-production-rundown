@@ -3,6 +3,10 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+
+const exeDir = process.pkg ? path.dirname(process.execPath) : process.cwd();
+require('dotenv').config({ path: path.join(exeDir, '.env') });
 
 const app = express();
 const server = http.createServer(app);
@@ -55,3 +59,20 @@ server.listen(PORT, () => {
   console.log(`   Producer: http://localhost:${PORT}/`);
   console.log(`   Press Ctrl+C to stop\n`);
 });
+
+// ── Cloudflared Tunnel Auto-Start ─────────────────────────────────────────────
+if (process.env.TUNNEL_TOKEN && process.pkg) {
+  const { spawn } = require('child_process');
+  let cfPath = path.join(path.dirname(process.execPath), 'cloudflared.exe');
+  
+  if (fs.existsSync(cfPath)) {
+    console.log(`\n☁️  Starting Cloudflared Tunnel (Packaged Mode)...`);
+    const cf = spawn(cfPath, ['tunnel', 'run'], { stdio: 'inherit' });
+    cf.on('error', (err) => {
+      console.error('Failed to start cloudflared:', err.message);
+    });
+  } else {
+    console.warn(`\n⚠️  TUNNEL_TOKEN found, but cloudflared.exe is missing next to the executable.`);
+    console.warn(`   Please download cloudflared.exe and place it in the same folder.`);
+  }
+}
