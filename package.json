@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon --ignore data/ --ignore public/ server/index.js",
+    "tunnel": "dotenv -- cloudflared tunnel run",
+    "dev:tunnel": "concurrently \"npm run dev\" \"npm run tunnel\"",
     "package": "pkg . --targets node18-win-x64 --output dist/stream-production.exe"
   },
   "keywords": [],
@@ -20,6 +22,9 @@
     "uuid": "^14.0.2"
   },
   "devDependencies": {
+    "cloudflared": "^0.7.3",
+    "concurrently": "^10.0.5",
+    "dotenv-cli": "^11.0.0",
     "nodemon": "^3.1.14",
     "pkg": "^5.8.1"
   },
